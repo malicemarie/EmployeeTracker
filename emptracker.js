@@ -3,6 +3,7 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const consoletable = require("console.table");
+const util = require("util");
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -17,6 +18,7 @@ const connection = mysql.createConnection({
 
 connection.connect(err => {
   if (err) throw err;
+  connection.query = util.promisify(connection.query);
   login();
 });
 
@@ -133,6 +135,7 @@ function start(username) {
     });
 }
 
+// working function
 function viewAll(username) {
   let query = "SELECT * FROM employee";
   connection.query(query, (err, res) => {
@@ -145,60 +148,98 @@ function viewAll(username) {
 
 // working function
 async function addEmployee(username) {
-  await inquirer
-    .prompt([
-      {
-        name: "firstname",
-        type: "input",
-        message: "What is the employee's first name"
-      },
-      {
-        name: "lastname",
-        type: "input",
-        message: "What is the employee's last name"
-      },
-      {
-        name: "roleid",
-        type: "list",
-        message: "What is the employees role?",
-        choices: [
-          { name: "Sales Manager", value: "1" },
-          { name: "Sales Person", value: "2" },
-          { name: "Lead Engineer", value: "3" },
-          { name: "Engineer", value: "4" },
-          { name: "Attorney", value: "5" },
-          { name: "Accountant", value: "6" }
-        ]
-      },
-      {
-        name: "mgmtid",
-        type: "list",
-        message: "Who is the employees manager?",
-        choices: [
-          {
-            name: "Ashlyn Yuen",
-            value: "1"
-          },
-          { name: "Jessica Wu", value: "2" },
-          { name: "None", value: "0" }
-        ]
-      }
-    ])
-    .then(answer => {
-      connection.query(
-        "INSERT INTO employee SET ?",
+  try {
+    const res = await connection.query("SELECT * FROM department");
+    const deptinfo = res.map(deptinfo => ({
+      name: deptinfo.name,
+      value: deptinfo.id
+    }));
+
+    await inquirer
+      .prompt([
         {
-          first_name: answer.firstname,
-          last_name: answer.lastname,
-          role_id: answer.roleid,
-          manager_id: answer.mgmtid
+          name: "firstname",
+          type: "input",
+          message: "What is the employee's first name"
         },
-        err => {
-          if (err) throw err;
-          console.log("Your employee was added successfully!");
-          start(username);
+        {
+          name: "lastname",
+          type: "input",
+          message: "What is the employee's last name"
+        },
+        {
+          name: "roleid",
+          type: "list",
+          message: "What is the employees role?",
+          choices: deptinfo
+        },
+        {
+          name: "mgmtid",
+          type: "list",
+          message: "Who is the employees manager?",
+          choices: [
+            {
+              name: "Ashlyn Yuen",
+              value: "1"
+            },
+            { name: "Jessica Wu", value: "2" },
+            { name: "None", value: "0" }
+          ]
         }
-      );
-    })
-    .catch(err => console.log(err));
+      ])
+      .then(answer => {
+        connection.query(
+          "INSERT INTO employee SET ?",
+          {
+            first_name: answer.firstname,
+            last_name: answer.lastname,
+            role_id: answer.roleid,
+            manager_id: answer.mgmtid
+          },
+          err => {
+            if (err) throw err;
+            console.log("Your employee was added successfully!");
+            start(username);
+          }
+        );
+      })
+      .catch(err => console.log(err));
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function removeEmployee(username) {
+  try {
+    const res = await connection.query("SELECT * FROM employee");
+    const empnames = res.map(empnames => ({
+      name: empnames.first_name,
+      value: empnames.id
+    }));
+    await inquirer
+      .prompt([
+        {
+          name: "empnames",
+          type: "list",
+          message: "Who would you like to delete?",
+          choices: empnames
+        }
+      ])
+      .then(answer => {
+        connection.query(
+          "DELETE FROM employee WHERE ?",
+          {
+            id: answer.empnames
+          },
+          err => {
+            if (err) throw err;
+            console.log("Employee was removed successfully!");
+            start(username);
+          }
+        );
+      })
+      .catch(err => console.log(err));
+  } catch (err) {
+    console.log(err);
+  }
 }
