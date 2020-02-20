@@ -60,8 +60,8 @@ function validateUser(username, password) {
     [{ username }, { password }],
     (err, results) => {
       if (err) throw err;
-      const hasMatchingUser = results.length > 0;
-      if (hasMatchingUser) {
+      const doesUserExist = results.length > 0;
+      if (doesUserExist) {
         console.log(`${username} successfully logged in`);
         start(username);
       } else {
@@ -132,56 +132,19 @@ function start(username) {
       }
     });
 }
-async function viewAllByManager(username) {
-  console.log("");
-  // SELECT * FROM role;
-  let query = "SELECT * FROM role";
-  const rows = await connection.query(query);
-  console.table(rows);
-  await start(username);
-  return rows;
-}
 
-async function viewAllByDepartment(username) {
-  // SELECT * from department;
-
-  let query = "SELECT * FROM department";
-  const rows = await connection.query(query);
-  console.table(rows);
-  await start(username);
-}
-
-async function viewAll(username) {
-  console.log("");
-
-  // SELECT * FROM employee;
+function viewAll(username) {
   let query = "SELECT * FROM employee";
-  const rows = await connection.query(query);
-  console.table(rows);
-  await start(username);
+  connection.query(query, (err, res) => {
+    if (err) throw err;
+    console.log(res.length + " employees found!");
+    console.table("All Employees:", res);
+    start(username);
+  });
 }
 
-async function addEmployee(employeeInfo) {
-  let roleId = await getRoleId(employeeInfo.role);
-  let managerId = await getEmployeeId(employeeInfo.manager);
-
-  // INSERT into employee (first_name, last_name, role_id, manager_id) VALUES ("Bob", "Hope", 8, 5);
-  let query =
-    "INSERT into employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)";
-  let args = [
-    employeeInfo.first_name,
-    employeeInfo.last_name,
-    roleId,
-    managerId
-  ];
-  const rows = await connection.query(query, args);
-  console.log(
-    `Added employee ${employeeInfo.first_name} ${employeeInfo.last_name}.`
-  );
-}
-
+// working function
 async function addEmployee(username) {
-  // prompt for info about the item being put up for auction
   await inquirer
     .prompt([
       {
@@ -217,7 +180,7 @@ async function addEmployee(username) {
             value: "1"
           },
           { name: "Jessica Wu", value: "2" },
-          { name: "None", value: "NULL" }
+          { name: "None", value: "0" }
         ]
       }
     ])
