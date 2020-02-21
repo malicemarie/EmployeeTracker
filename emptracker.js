@@ -145,7 +145,7 @@ function start(username) {
 
 function viewAll(username) {
   let query =
-    "SELECT * FROM employee INNER JOIN role ON employee.role_id = role.id;";
+    "SELECT * FROM employee INNER JOIN role ON employee.role_id = role.id INNER JOIN department ON role.department_id = department.id";
   connection.query(query, (err, res) => {
     if (err) throw err;
     console.log(res.length + " employees found!");
