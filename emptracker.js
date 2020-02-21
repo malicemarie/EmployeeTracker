@@ -145,7 +145,7 @@ function start(username) {
 
 function viewAll(username) {
   let query =
-    "SELECT * FROM employees INNER JOIN roles ON employee.role_id = roles.id;";
+    "SELECT * FROM employee INNER JOIN role ON employee.role_id = role.id;";
   connection.query(query, (err, res) => {
     if (err) throw err;
     console.log(res.length + " employees found!");
@@ -165,7 +165,8 @@ function viewAllDepartments(username) {
 }
 
 function viewAllRoles(username) {
-  let query = "SELECT * FROM role";
+  let query =
+    "SELECT * FROM role INNER JOIN department ON role.department_id = department.id;";
   connection.query(query, (err, res) => {
     if (err) throw err;
     console.log(res.length + " roless found!");
@@ -181,9 +182,11 @@ async function addEmployee(username) {
       name: deptinfo.name,
       value: deptinfo.id
     }));
-    const mgmtres = await connection.query("SELECT * FROM employee");
+    const mgmtres = await connection.query(
+      "SELECT * FROM employee WHERE manager_id IS NULL"
+    );
     const mgmtnames = mgmtres.map(mgmtnames => ({
-      name: mgmtnames.first_name,
+      name: `${mgmtnames.first_name} ${mgmtnames.last_name}`,
       value: mgmtnames.id
     }));
 
@@ -309,7 +312,7 @@ async function removeEmployee(username) {
   try {
     const res = await connection.query("SELECT * FROM employee");
     const empnames = res.map(empnames => ({
-      name: empnames.first_name,
+      name: `${empnames.first_name} ${empnames.last_name}`,
       value: empnames.id
     }));
     await inquirer
@@ -344,7 +347,7 @@ async function updateEmployee(username) {
   try {
     const empres = await connection.query("SELECT * FROM employee");
     const empnames = empres.map(empnames => ({
-      name: empnames.first_name,
+      name: `${empnames.first_name} ${empnames.last_name}`,
       value: empnames.id
     }));
 
