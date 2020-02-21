@@ -144,7 +144,8 @@ function start(username) {
 }
 
 function viewAll(username) {
-  let query = "SELECT * FROM employee";
+  let query =
+    "SELECT * FROM employees INNER JOIN roles ON employee.role_id = roles.id;";
   connection.query(query, (err, res) => {
     if (err) throw err;
     console.log(res.length + " employees found!");
@@ -352,7 +353,7 @@ async function updateEmployee(username) {
       name: rolenames.title,
       value: rolenames.id
     }));
-
+    console.log(rolenames);
     const answer = await inquirer.prompt([
       {
         name: "empnames",
@@ -368,15 +369,10 @@ async function updateEmployee(username) {
       }
     ]);
 
-    await connection.query(
-      "UPDATE employee SET ? WHERE ?",
-      {
-        role_id: answer.rolenames
-      },
-      {
-        id: answer.empnames
-      }
-    );
+    await connection.query("UPDATE employee SET ? WHERE ?", [
+      { role_id: answer.newrole },
+      { id: answer.empnames }
+    ]);
     console.log("Employee was updated successfully!");
     start(username);
   } catch (err) {
